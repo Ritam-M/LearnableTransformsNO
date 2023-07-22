@@ -9,7 +9,7 @@ np.random.seed(0)
 #  1d Neural layer
 ################################################################
 class NeuralConv1d(nn.Module):
-    def __init__(self, in_channels, out_channels, modes1):
+    def __init__(self, in_channels, out_channels, spatial_dim, modes1):
         super(NeuralConv1d, self).__init__()
 
         """
@@ -18,27 +18,26 @@ class NeuralConv1d(nn.Module):
 
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.modes1 = modes1  #Number of Fourier modes to multiply, at most floor(N/2) + 1
+        self.spatial_dim = spatial_dim
+        self.modes1 = modes1    
 
         self.scale = (1 / (in_channels*out_channels))
-        self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1, dtype=torch.cfloat))
+        self.weights1 = nn.Parameter(self.scale * torch.rand(in_channels, out_channels, self.modes1))
+        
+        self.M = nn.Linear(self.spatial_dim,self.modes1)    # M block
+        self.N = nn.Linear(self.modes1, self.spatial_dim)   # N block
 
-    # Complex multiplication
-    def compl_mul1d(self, input, weights):
+    def R(self, input, weights):
         # (batch, in_channel, x ), (in_channel, out_channel, x) -> (batch, out_channel, x)
         return torch.einsum("bix,iox->box", input, weights)
 
     def forward(self, x):
         batchsize = x.shape[0]
-        #Compute Fourier coeffcients up to factor of e^(- something constant)
-        x_ft = torch.fft.rfft(x)
-
-        # Multiply relevant Fourier modes
-        out_ft = torch.zeros(batchsize, self.out_channels, x.size(-1)//2 + 1,  device=x.device, dtype=torch.cfloat)
-        out_ft[:, :, :self.modes1] = self.compl_mul1d(x_ft[:, :, :self.modes1], self.weights1)
-
-        #Return to physical space
-        x = torch.fft.irfft(out_ft, n=x.size(-1))
+        
+        x_ft = self.M(x)
+        out_ft = self.R(x_ft, self.weights1)
+        x = self.N(out_ft)
+        
         return x
 
 class MLP(nn.Module):
@@ -54,31 +53,19 @@ class MLP(nn.Module):
         return x
 
 class NO1d(nn.Module):
-    def __init__(self, modes, width):
+    def __init__(self, modes, width, spatial_dim):
         super(NO1d, self).__init__()
-
-        """
-        The overall network. It contains 4 layers of the Neural Conv layer.
-        1. Lift the input to the desire channel dimension by self.fc0 .
-        2. 4 layers of the integral operators u' = (W + K)(u).
-            W defined by self.w; K defined by self.conv .
-        3. Project from the channel space to the output space by self.fc1 and self.fc2 .
-        
-        input: the solution of the initial condition and location (a(x), x)
-        input shape: (batchsize, x=s, c=2)
-        output: the solution of a later timestep
-        output shape: (batchsize, x=s, c=1)
-        """
 
         self.modes1 = modes
         self.width = width
+        self.spatial_dim = spatial_dim
         self.padding = 8 # pad the domain if input is non-periodic
 
         self.p = nn.Linear(2, self.width) # input channel_dim is 2: (u0(x), x)
-        self.conv0 = NeuralConv1d(self.width, self.width, self.modes1)
-        self.conv1 = NeuralConv1d(self.width, self.width, self.modes1)
-        self.conv2 = NeuralConv1d(self.width, self.width, self.modes1)
-        self.conv3 = NeuralConv1d(self.width, self.width, self.modes1)
+        self.conv0 = NeuralConv1d(self.width, self.width, self.spatial_dim, self.modes1)
+        self.conv1 = NeuralConv1d(self.width, self.width, self.spatial_dim, self.modes1)
+        self.conv2 = NeuralConv1d(self.width, self.width, self.spatial_dim, self.modes1)
+        self.conv3 = NeuralConv1d(self.width, self.width, self.spatial_dim, self.modes1)
         self.mlp0 = MLP(self.width, self.width, self.width)
         self.mlp1 = MLP(self.width, self.width, self.width)
         self.mlp2 = MLP(self.width, self.width, self.width)
@@ -169,7 +156,7 @@ train_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_trai
 test_loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x_test, y_test), batch_size=batch_size, shuffle=False)
 
 # model
-model = NO1d(modes, width).cuda()
+model = NO1d(modes, width, s).cuda()
 print(count_params(model))
 
 ################################################################
