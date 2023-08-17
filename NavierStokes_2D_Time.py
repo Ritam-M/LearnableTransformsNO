@@ -32,6 +32,7 @@ class NeuralConv2d(nn.Module):
     def forward(self, x):
 
         batchsize = x.shape[0]
+
         x_ft = self.M1(x.permute(0,1,3,2)).permute(0,1,2,3)
         x_ft = self.M2(x_ft.permute(0,1,3,2))
         
@@ -87,6 +88,8 @@ class NO2d(nn.Module):
         x = x.permute(0, 3, 1, 2)
         x = F.pad(x, [0,self.padding, 0,self.padding])
 
+        # x = F.avg_pool2d(x, kernel_size=2, stride=2)       # Downsampling
+        
         x1 = self.conv0(x)
         x1 = self.mlp0(x1)
         x2 = self.w0(x)
@@ -110,6 +113,8 @@ class NO2d(nn.Module):
         x2 = self.w3(x)
         x = x1 + x2
 
+        # x = F.interpolate(x, size=(256, 256), mode='bilinear', align_corners=False)   # Upsampling
+        
         x = x[..., :-self.padding, :-self.padding]
         x = self.q(x)
         x = x.permute(0, 2, 3, 1)
