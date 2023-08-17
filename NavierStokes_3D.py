@@ -98,6 +98,8 @@ class NO3d(nn.Module):
         x = x.permute(0, 4, 1, 2, 3)
         x = F.pad(x, [0,self.padding]) # pad the domain if input is non-periodic
 
+        # x = F.avg_pool3d(x, kernel_size=(4,4,4))    # Downsampling from 256,256,80 -> 64,64,20
+        
         x1 = self.conv0(x)
         x1 = self.mlp0(x1)
         x2 = self.w0(x)
@@ -121,6 +123,8 @@ class NO3d(nn.Module):
         x2 = self.w3(x)
         x = x1 + x2
 
+        # x = F.interpolate(x, scale_factor=(4,4,4), mode='trilinear')      # Upsampling to 64,64,20 -> 256,256,80
+        
         x = x[..., :-self.padding]
         x = self.q(x)
         x = x.permute(0, 2, 3, 4, 1) # pad the domain if input is non-periodic
