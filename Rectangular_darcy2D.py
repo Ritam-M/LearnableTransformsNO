@@ -62,7 +62,7 @@ class NO2d(nn.Module):
         self.modes2 = modes2
         self.dims = dims
         self.width = width
-        self.padding = 9 # pad the domain if input is non-periodic
+        self.padding = 7 # pad the domain if input is non-periodic
 
         self.p = nn.Linear(3, self.width) # input channel is 3: (a(x, y), x, y)
         self.conv0 = NeuralConv2d(self.width, self.width, self.dims, self.modes1, self.modes2)
@@ -92,6 +92,8 @@ class NO2d(nn.Module):
         x = x1 + x2
         x = F.gelu(x)
 
+        # x = F.avg_pool2d(x, kernel_size=2, stride=2)   ## Downsampling
+        
         x1 = self.conv1(x)
         x1 = self.mlp1(x1)
         x2 = self.w1(x)
@@ -109,6 +111,8 @@ class NO2d(nn.Module):
         x2 = self.w3(x)
         x = x1 + x2
 
+        # x = F.interpolate(x, size=(256, 256), mode='bilinear', align_corners=False)   ## Upsampling
+        
         x = x[..., :-self.padding, :-self.padding]
         x = self.q(x)
         x = x.permute(0, 2, 3, 1)
