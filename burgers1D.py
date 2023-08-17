@@ -82,7 +82,11 @@ class NO1d(nn.Module):
         x = self.p(x)
         x = x.permute(0, 2, 1)
         # x = F.pad(x, [0,self.padding]) # pad the domain if input is non-periodic
-
+        
+        # print(x.shape)
+        x = x.view(x.shape[0], x.shape[1], 1024, 4).mean(dim=-1)    # Downsampling
+        # print(x.shape)
+                
         x1 = self.conv0(x)
         x1 = self.mlp0(x1)
         x2 = self.w0(x)
@@ -106,9 +110,13 @@ class NO1d(nn.Module):
         x2 = self.w3(x)
         x = x1 + x2
 
+        # print(x.shape)
+        x = F.interpolate(x.unsqueeze(2), size=(1, 4096), mode='nearest').squeeze(2)
+        # print(x.shape)
+        
         # x = x[..., :-self.padding] # pad the domain if input is non-periodic
-        x = self.q(x)
         x = x.permute(0, 2, 1)
+        x = self.q(x)
         return x
 
     def get_grid(self, shape, device):
