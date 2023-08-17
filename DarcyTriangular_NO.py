@@ -45,11 +45,16 @@ class NeuralConv2d(nn.Module):
     def forward(self, x):
         
         batchsize = x.shape[0]
+
+        # x = F.avg_pool2d(x, kernel_size=2, stride=2)   # Downsampling         
+        
         x_ft = self.M1(x.permute(0,1,3,2)).permute(0,1,2,3)
         x_ft = self.M2(x_ft.permute(0,1,3,2))
         
         out_ft = self.R(x_ft, self.weights1)
         out_ft = self.R(out_ft, self.weights2)
+
+        # x = F.interpolate(x, size=(256, 256), mode='bilinear', align_corners=False)    # Upsampling
         
         x = self.N1(out_ft.permute(0,1,3,2)).permute(0,1,2,3)
         x = self.N2(x.permute(0,1,3,2))
