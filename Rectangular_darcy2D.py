@@ -86,14 +86,14 @@ class NO2d(nn.Module):
         x = x.permute(0, 3, 1, 2)
         x = F.pad(x, [0,self.padding, 0,self.padding])
 
+        # x = F.avg_pool2d(x, kernel_size=2, stride=2)   ## Downsampling
+        
         x1 = self.conv0(x)
         x1 = self.mlp0(x1)
         x2 = self.w0(x)
         x = x1 + x2
         x = F.gelu(x)
 
-        # x = F.avg_pool2d(x, kernel_size=2, stride=2)   ## Downsampling
-        
         x1 = self.conv1(x)
         x1 = self.mlp1(x1)
         x2 = self.w1(x)
