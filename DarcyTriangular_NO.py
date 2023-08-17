@@ -46,16 +46,12 @@ class NeuralConv2d(nn.Module):
         
         batchsize = x.shape[0]
 
-        # x = F.avg_pool2d(x, kernel_size=2, stride=2)   # Downsampling         
-        
         x_ft = self.M1(x.permute(0,1,3,2)).permute(0,1,2,3)
         x_ft = self.M2(x_ft.permute(0,1,3,2))
         
         out_ft = self.R(x_ft, self.weights1)
         out_ft = self.R(out_ft, self.weights2)
 
-        # x = F.interpolate(x, size=(256, 256), mode='bilinear', align_corners=False)    # Upsampling
-        
         x = self.N1(out_ft.permute(0,1,3,2)).permute(0,1,2,3)
         x = self.N2(x.permute(0,1,3,2))
         
@@ -90,6 +86,8 @@ class SimpleBlock2d(nn.Module):
         x = self.fc0(x)
         x = x.permute(0, 3, 1, 2)
 
+        # x = F.avg_pool2d(x, kernel_size=2, stride=2)   ## Downsampling
+        
         x1 = self.conv0(x)
         x2 = self.w0(x.view(batchsize, self.width, -1)).view(batchsize, self.width, size_x, size_y)
         x = x1 + x2
@@ -109,6 +107,8 @@ class SimpleBlock2d(nn.Module):
         x2 = self.w3(x.view(batchsize, self.width, -1)).view(batchsize, self.width, size_x, size_y)
         x = x1 + x2
 
+        # x = F.interpolate(x, size=(256, 256), mode='bilinear', align_corners=False)    # Upsampling
+        
         x = x.permute(0, 2, 3, 1)
         x = self.fc1(x)
         x = F.relu(x)
