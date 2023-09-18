@@ -6,7 +6,7 @@ np.random.seed(0)
 
 class NeuralConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, dims, modes1, modes2):
-        super(SpectralConv2d, self).__init__()
+        super(NeuralConv2d, self).__init__()
 
         self.in_channels = in_channels
         self.out_channels = out_channels
