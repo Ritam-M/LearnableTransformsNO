@@ -9,3 +9,9 @@ This repository is largely adapted from
 
 The datasets used in the paper can be found at:
 - [PDE datasets](https://drive.google.com/drive/folders/1UnbQh2WWc6knEHbLn-ZaXrKUZhp7pjt-?usp=sharing)
+
+Additional Codes to be uploaded soon:
+1. Comparison with examples from Geometric FNO paper.
+2. Comparison with examples from PINO paper.
+3. Diffusion Sampling (Looking for collaborations)
+4. FourCastNet  (Looking for collaborations)
